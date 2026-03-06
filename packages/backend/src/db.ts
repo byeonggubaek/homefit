@@ -1,6 +1,6 @@
 // oracle-pool.ts (에러 수정 완료)
 import oracledb from 'oracledb';
-import { NavItem, NavSubItem, ColDesc, WorkoutRecord } from 'shared';
+import { NavItem, NavSubItem, ColDesc, WorkoutRecord, WorkoutSummary, WorkoutSummarySub } from 'shared';
 import dotenv from 'dotenv';
 import Logger from './logger.js'
 
@@ -89,16 +89,17 @@ async function execPlsql(sql: string, binds: Record<string, any>, options: any =
     });
     // 2. 성공 로그
     await Logger.logQuerySuccess(logEntry, result.rowsAffected || 0);
-    console.log('PL/SQL 실행 성공, binds:', '결과:', result.outBinds.json || result.rows || result.outBinds);
     // JSON CLOB 자동 처리
     if (result.outBinds?.json) {
-      const jsonString = result.outBinds.json.toString();
-      return JSON.parse(jsonString);  // 자동 파싱!
+      const clob = result.outBinds.json as oracledb.Lob;      
+      const jsonData = await clob.getData();
+      const jsonString = typeof jsonData === 'string' ? jsonData : jsonData.toString();
+      return JSON.parse(jsonString);
     }
     return result.outBinds || result.rows || [];
   } catch (error) {
     // 3. 에러 로그
-    console.log('Executing PL/SQL with binds: 실패', binds, '에러:', (error as Error).message || error);
+    console.log('Executing PL/SQL with binds: 실패', '에러:', (error as Error).message || error);
     await Logger.logQueryError(logEntry, error)
     throw error
   } finally {
@@ -294,8 +295,28 @@ export const getWorkoutRecords = async (memberId: string): Promise<WorkoutRecord
 // 6. 운동내역 피벗 조회
 export const getWorkoutPivot = async (memberId: string, from: string, to: string): Promise<any> => {
   const result = await getRawWorkoutPivot(memberId, from, to);
-  if (result.length === 0 || !result[0]) {
-    return null;
-  }
-  return JSON.parse(result);
+  return result;
+}
+function pivotJsonToWorkoutSummary(pivotData: any[]): WorkoutSummary[] {
+  // 1. 모든 운동 ID 수집
+  const workoutIds = new Set<string>();
+  pivotData.forEach(day => {
+    Object.keys(day.workouts || {}).forEach(id => {
+      if (id.endsWith('_reps')) {
+        workoutIds.add(id.replace('_reps', ''));
+      }
+    });
+  });
+
+  // 2. 각 운동별 WorkoutSummary 생성
+  return Array.from(workoutIds).map(cate => {
+    const values: WorkoutSummarySub[] = pivotData.map(day => ({
+      reps: (day.workouts as any)[`${cate}_reps`] || 0
+    }));
+    
+    return {
+      cate,
+      values
+    };
+  });
 }

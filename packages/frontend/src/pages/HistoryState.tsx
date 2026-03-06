@@ -6,11 +6,6 @@ import { useEffect, useState } from "react";
 import type { WorkoutRecord, ColDesc, WorkoutSummary } from 'shared';
 
 export default function HistoryState() {  
-  const dynamicConfig = {
-    plank: { label: "플랭크", color: "var(--chart-1)" },
-    squat: { label: "스쿼트", color: "var(--chart-2)" },
-    pushup: { label: "푸시업", color: "var(--chart-3)" }
-  } satisfies ChartConfig;
 
   const colors: string[] = ['bg-table-1', 'bg-table-2', 'bg-table-3', 'bg-table-4', 'bg-table-5'];
 
@@ -34,13 +29,28 @@ export default function HistoryState() {
 
   const [chartData, setChartData] = useState<WorkoutSummary[]>([]);
   useEffect(() => {
-    fetch('http://localhost:3001/api/get_workout_pivot?memberId=U000001&from=2026-01-01&to=2026-03-03')
+    fetch('http://localhost:3001/api/get_workout_pivot?memberId=U000001&from=2026-01-01&to=2026-01-03')
       .then(res => res.json())
       .then(data => {
         console.log('pivot', data.data);
-        setChartData(data.data);  
+        const dailyData = data.data.map(({ date, workouts }: { date: string; workouts: any }) => {
+          // "2026-01-01T00:00:00" → "2026-01-01"
+          const [dateOnly] = date.split("T");
+
+          return {
+            date: dateOnly,
+            ...workouts
+          };
+        });        
+        console.log('dailyData', dailyData);
+        setChartData(dailyData);  
       });
-  }, []);  
+  }, []); 
+  const dynamicConfig = {
+    "W0001_reps": { label: "신대", color: "var(--chart-1)" },
+    "W0002_reps": { label: "연향동", color: "var(--chart-2)" },
+    "W0003_reps": { label: "중앙동", color: "var(--chart-3)" }
+  } satisfies ChartConfig;
 
   return (
     <div className="flex flex-col gap-3">
@@ -57,7 +67,7 @@ export default function HistoryState() {
           <WdogChartLine 
             chartData={chartData} 
             chartConfig={dynamicConfig}
-            xAxisKey="month"
+            xAxisKey="date"
             title="일별 운동 추이"
             description="2024년 1~3월 : 단위 횟수"
           />

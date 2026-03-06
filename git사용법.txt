@@ -12,7 +12,7 @@ git config user.email "oranjes@naver.com"
 
 git add .
 git commit -m "Initial commit"
-git remote add origin https://github.com/byeonggubaek/shardcn.git
+git remote add origin https://github.com/byeonggubaek/homefit.git
 git push -u origin main
 
 #4. branch 처리 
