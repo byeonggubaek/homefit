@@ -1,0 +1,89 @@
+create or replace PROCEDURE get_workout_pivot_json (
+  p_member_id NVARCHAR2,
+  p_from_dt DATE,
+  p_to_dt DATE,
+  p_json OUT CLOB
+)
+IS
+  v_sql CLOB;
+  v_cols CLOB := '';
+  v_select_cols CLOB := '';
+BEGIN
+  -- 1. 피벗 컬럼 (IN 절)
+  BEGIN
+    SELECT LISTAGG(
+      '''' || workout_id || ''' AS ' || workout_id, ', '
+    )
+    INTO v_cols
+    FROM (
+      SELECT DISTINCT B.workout_id
+      FROM workout_record A 
+      JOIN workout_detail B ON B.workout_record_id = A.id
+      WHERE A.member_id = p_member_id
+      AND A.wo_dt BETWEEN p_from_dt AND p_to_dt
+    );
+  EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+      v_cols := '''W0001'' AS W0001';
+  END;
+
+  -- 2. SELECT 컬럼
+  BEGIN
+    SELECT LISTAGG(
+      workout_id || '_reps', ', '
+    )
+    INTO v_select_cols
+    FROM (
+      SELECT DISTINCT B.workout_id
+      FROM workout_record A 
+      JOIN workout_detail B ON B.workout_record_id = A.id
+      WHERE A.member_id = p_member_id
+      AND A.wo_dt BETWEEN p_from_dt AND p_to_dt
+    );
+  EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+      v_select_cols := 'W0001_reps';
+  END;
+
+  DBMS_OUTPUT.PUT_LINE('피벗 컬럼: ' || v_cols);
+  DBMS_OUTPUT.PUT_LINE('SELECT 컬럼: ' || v_select_cols);
+
+  -- 3. JSON 동적 SQL
+  v_sql := '
+WITH date_range AS (
+    SELECT  TRUNC(DATE ''' || TO_CHAR(p_from_dt, 'YYYY-MM-DD') || ''') + LEVEL - 1 AS date_val
+    FROM    DUAL 
+    CONNECT BY LEVEL <= ' || (TRUNC(p_to_dt - p_from_dt) + 1) || '
+), workout AS (
+    SELECT  DISTINCT B.workout_id
+    FROM    workout_record A 
+    JOIN    workout_detail B ON B.workout_record_id = A.id
+    WHERE   A.member_id = ''' || p_member_id || '''
+    AND     A.wo_dt BETWEEN DATE ''' || TO_CHAR(p_from_dt, 'YYYY-MM-DD') || ''' AND DATE ''' || TO_CHAR(p_to_dt, 'YYYY-MM-DD') || '''
+), workout_pivot AS (
+    SELECT  A.date_val wo_dt, B.workout_id, 0 reps
+    FROM    date_range A 
+    CROSS JOIN workout B
+
+    UNION ALL 
+
+    SELECT  TRUNC(A.wo_dt), B.workout_id, NVL(B.reps, 0)
+    FROM    workout_record A JOIN workout_detail B ON B.workout_record_id = A.id
+    WHERE   A.member_id = ''' || p_member_id || '''
+    AND     A.wo_dt BETWEEN DATE ''' || TO_CHAR(p_from_dt, 'YYYY-MM-DD') || ''' AND DATE ''' || TO_CHAR(p_to_dt, 'YYYY-MM-DD') || '''
+)
+SELECT  JSON_ARRAYAGG(
+            JSON_OBJECT(
+                ''date'' VALUE wo_dt,
+                ''workouts'' VALUE JSON_OBJECT(' || v_select_cols || ') RETURNING CLOB
+            ) ORDER BY wo_dt RETURNING CLOB
+        ) AS json_result 
+FROM (
+    SELECT wo_dt, ' || v_select_cols || '
+    FROM workout_pivot
+    PIVOT (SUM(reps) AS reps FOR workout_id IN (' || v_cols || '))
+) wp';
+
+  DBMS_OUTPUT.PUT_LINE('JSON SQL 길이: ' || v_sql);
+  EXECUTE IMMEDIATE v_sql INTO p_json;
+END;
