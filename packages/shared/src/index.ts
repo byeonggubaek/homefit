@@ -35,16 +35,13 @@ export interface WorkoutRecord {
   title_color: string;
   target_reps: number;
   target_sets: number;
-  reps: number;
+  count: number;
   point: number;
   description?: string;
 }
-export interface WorkoutSummarySub {
-  reps: number;
-}
-export interface WorkoutSummary {
-  cate: string;
-  values: WorkoutSummarySub[];
+export interface ChartData {
+  columns: Record<string, any>;
+  data: Record<string, any>;
 }
 /*=======================================================================================================
   우편번호 

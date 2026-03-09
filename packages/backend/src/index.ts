@@ -215,7 +215,6 @@ app.get('/api/get_workout_pivot', async (req, res) => {
     res.json({
       success: true,
       data: records,
-      count: records.length,
       timestamp: new Date().toISOString()
     });
     await Logger.logApiSuccess(apiLogEntry);
@@ -227,6 +226,7 @@ app.get('/api/get_workout_pivot', async (req, res) => {
     });
   }
 });
+
 // API: 우편번호 검색 (한국우편사업진흥원)
 // GET /api/get_postcodes?zipcode=우편번호
 // PARAMETER : zipcode (필수) - 검색할 우편번호 (5자리)

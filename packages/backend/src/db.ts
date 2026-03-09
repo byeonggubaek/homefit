@@ -1,6 +1,6 @@
 // oracle-pool.ts (에러 수정 완료)
 import oracledb from 'oracledb';
-import { NavItem, NavSubItem, ColDesc, WorkoutRecord, WorkoutSummary, WorkoutSummarySub } from 'shared';
+import { NavItem, NavSubItem, ColDesc, WorkoutRecord, ChartData } from 'shared';
 import dotenv from 'dotenv';
 import Logger from './logger.js'
 
@@ -21,6 +21,7 @@ let pool: any = null;
 export async function initPool(): Promise<void> {
   if (pool) return;
   try {
+    oracledb.fetchAsString = [oracledb.CLOB];    
     pool = await oracledb.createPool(DB_CONFIG);
     console.log('DB풀을 생성하였습니다.');
     await Logger.log('i', 'DB풀 생성 성공');
@@ -150,7 +151,7 @@ async function getRawSubMenus(title: string = ''): Promise<any[]> {
 SELECT  nav_item_id || '-' || id AS id, 
         title, href, description 
 FROM    nav_sub_item
-WHERE   title LIKE '%' || :title || '%'
+WHERE   title LIKE '%' || :1 || '%'
 ORDER BY nav_item_id, id
 `, [title]);
 }
@@ -176,7 +177,7 @@ SELECT  Lower(id) AS id,  -- 중요함: 칼럼명을 소문자로 변환하여 �
         width,
         summary
 FROM    column_desc
-WHERE   table_name = :tableName
+WHERE   table_name = :1
 ORDER BY seq
 `, [tableName]);
 }
@@ -189,7 +190,7 @@ SELECT  A.id || '-' || B.workout_id AS id,
         MOD(TO_NUMBER(SUBSTR(B.workout_id, 2)) -1, 5) title_color, 
         B.target_reps,
         B.target_sets,
-        B.reps,
+        B.count,
         B.point,
         A.description
 FROM    workout_record A
@@ -199,20 +200,10 @@ WHERE   A.member_id = :1
 `, [memberId]);
 }
 async function getRawWorkoutPivot(memberId: string, from: string, to: string): Promise<any> {
-  const binds = {
-    memberId,
-    from,
-    to,
-    json: { type: oracledb.CLOB, dir: oracledb.BIND_OUT }
-  };
-  return execPlsql(`
-DECLARE
-  v_json CLOB;
-BEGIN
-  get_workout_pivot_json(:memberId, TO_DATE(:from, 'YYYY-MM-DD'), TO_DATE(:to, 'YYYY-MM-DD'), v_json);
-  :json := v_json;  
-END;
-`, binds);
+  return select(`
+SELECT get_workout_pivot_json(:1,:2,:3) AS json_result
+FROM   dual
+`, [memberId, from, to]);
 }
 
 // =================================================================================================================
@@ -287,36 +278,24 @@ export const getWorkoutRecords = async (memberId: string): Promise<WorkoutRecord
     title_color: rec.TITLE_COLOR,
     target_reps: rec.TARGET_REPS,
     target_sets: rec.TARGET_SETS,
-    reps: rec.REPS,
+    count: rec.COUNT,
     point: rec.POINT,
     description: rec.DESCRIPTION
   }));
 }
 // 6. 운동내역 피벗 조회
-export const getWorkoutPivot = async (memberId: string, from: string, to: string): Promise<any> => {
+export const getWorkoutPivot = async (memberId: string, from: string, to: string): Promise<ChartData> => {
   const result = await getRawWorkoutPivot(memberId, from, to);
-  return result;
-}
-function pivotJsonToWorkoutSummary(pivotData: any[]): WorkoutSummary[] {
-  // 1. 모든 운동 ID 수집
-  const workoutIds = new Set<string>();
-  pivotData.forEach(day => {
-    Object.keys(day.workouts || {}).forEach(id => {
-      if (id.endsWith('_reps')) {
-        workoutIds.add(id.replace('_reps', ''));
-      }
-    });
-  });
-
-  // 2. 각 운동별 WorkoutSummary 생성
-  return Array.from(workoutIds).map(cate => {
-    const values: WorkoutSummarySub[] = pivotData.map(day => ({
-      reps: (day.workouts as any)[`${cate}_reps`] || 0
-    }));
-    
-    return {
-      cate,
-      values
-    };
-  });
+  // 1. CLOB 문자열 추출
+  const jsonString = result[0].JSON_RESULT;
+  
+  // 2. JSON 파싱 (이스케이프 자동 처리)
+  const parsed = JSON.parse(jsonString);
+  
+  console.log('Parsed pivot data:', parsed);
+  // 3. ChartData 타입 반환
+  return {
+    columns: parsed.columns,
+    data: parsed.data
+  } as ChartData;
 }

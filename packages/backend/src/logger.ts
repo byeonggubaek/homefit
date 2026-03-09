@@ -60,15 +60,17 @@ class Logger {
     
     placeholders.forEach((ph) => {
       let bindValue: any;
-      
       // 1. 이름 바인딩 우선 (:memberId → binds.memberId)
       const bindName = ph.slice(1);  // :memberId → memberId
       if (typeof binds === 'object' && !Array.isArray(binds) && bindName in binds) {
+        console.log(`Placeholder ${ph} is treated as named bind.`);
         bindValue = binds[bindName];
       } 
       // 2. 배열 바인딩 폴백 (순서)
       else if (Array.isArray(binds)) {
-        const index = parseInt(bindName) || 0;
+        let index = parseInt(bindName) || 0;
+        index = index - 1; // :1 → 0-based index
+        index = index < binds.length ? index : 0; // 인덱스가 범위를 벗어나면 0으로 처리
         bindValue = binds[index];
       }
       // 3. 기본값

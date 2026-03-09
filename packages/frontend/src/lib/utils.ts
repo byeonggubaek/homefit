@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { ChartConfig } from "@/components/ui/chart";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -49,3 +50,30 @@ export const formatTime = (value: Date | number | string) => {
   const dateValue = new Date(value);
   return timeFormatter.format(dateValue);
 };  
+
+export const createWorkoutChartConfig = (columns: Array<{id: string, name: string}>): ChartConfig => {
+  return columns.reduce((config, col, index) => {
+    config[col.id] = {
+      label: col.name,
+      color: `var(--chart-${(index % 5) + 1})`
+    };
+    return config;
+  }, {} as ChartConfig);
+};
+
+export type ChartIconMap = Record<string, React.ComponentType<{ className?: string }>>;
+
+export const addIconsToConfig = (
+  config: ChartConfig, 
+  iconMap: ChartIconMap
+): ChartConfig => {
+  return Object.fromEntries(
+    Object.entries(config).map(([key, value]) => [
+      key,
+      {
+        ...value,
+        icon: iconMap[key] || iconMap.default
+      }
+    ])
+  ) as ChartConfig;  // 타입 단언 최소화
+};

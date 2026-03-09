@@ -140,7 +140,7 @@ REM # 테이블 칼럼 명세서
 REM ===============================================================================================================
 CREATE TABLE COLUMN_DESC
 (
-    TABLE_NAME VARCHAR2(10) NOT NULL,
+    TABLE_NAME VARCHAR2(30) NOT NULL,
     SEQ NUMBER(10) NOT NULL,
     ORD NUMBER(2) NOT NULL,
     ID VARCHAR2(20) NOT NULL,
@@ -151,16 +151,14 @@ CREATE TABLE COLUMN_DESC
     CONSTRAINT COLUMN_DESC_PK PRIMARY KEY (TABLE_NAME, SEQ)  -- 
 );
 
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 1, 1, 'id', '매출번호', 'key', 80, null);
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 2, 2, 'inv_dt', '매출일', 'dat', 100, null);
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 3, 3, 'seller_id', '매출처', 'str', 100, null);
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 4, 4, 'seller_name', '매출처명', 'str', 300, null);
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 5, 5, 'area_name', '지역', 'str', 100, null);
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 6, 6, 'payment_status', '지급상태', 'lst', 100, null);
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 7, 7, 'payment_method', '결제방법  ', 'lst', 100, null);     
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 8, 8, 'qty', '수량', 'qty', 100, 'sum');
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 9, 9, 'price', '단가', 'prc', 100, 'avg');
-INSERT INTO COLUMN_DESC VALUES ('INVOICE', 10, 10, 'amount', '금액', 'amt', 100, 'sum');  
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 1, 1, 'id', '매출번호', 'key', 80, null);
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 2, 2, 'wo_dt', '운동일', 'dat', 100, null);
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 3, 3, 'title', '운동명', 'lst', 100, null);
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 4, 4, 'target_reps', '권장횟수', 'qty', 100, 'sum');
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 5, 5, 'target_sets', '권장세트수', 'qty', 100, 'avg');
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 6, 6, 'count', '실행횟수', 'qty', 100, 'sum');  
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 7, 7, 'point', '횟득포인트', 'qty', 100, 'sum');  
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 8, 8, 'description', '운동내역', 'str', 100, 'sum');  
 
 SELECT *
 FROM   COLUMN_DESC
@@ -282,7 +280,9 @@ CREATE TABLE WORKOUT_DETAIL
 (
     WORKOUT_RECORD_ID VARCHAR2(7) NOT NULL,
     WORKOUT_ID VARCHAR2(5) NOT NULL,
-    COUNT NUMBER(10) NOT NULL, -- 운동횟수
+    TARGET_REPS NUMBER(10) NOT NULL, -- 권장운동횟수
+    TARGET_SETS NUMBER(10) NOT NULL, -- 권장세트수
+    COUNT NUMBER(10) NOT NULL, -- 실제운동횟수
     POINT NUMBER(10) NOT NULL, -- 운동포인트
     CONSTRAINT WORKOUT_DETAIL_PK PRIMARY KEY (WORKOUT_RECORD_ID, WORKOUT_ID),  -- 
     CONSTRAINT WORKOUT_DETAIL_WORKOUT_ID_FK FOREIGN KEY (WORKOUT_ID) REFERENCES WORKOUT(ID)    
@@ -290,19 +290,19 @@ CREATE TABLE WORKOUT_DETAIL
 
 INSERT INTO WORKOUT_DETAIL VALUES
 (
-    'WR00001', 'W0001', 15, 0
+    'WR00001', 'W0001', 15, 3, 45, 0
 );
 INSERT INTO WORKOUT_DETAIL VALUES
 (
-    'WR00001', 'W0002', 30, 0
+    'WR00001', 'W0002', 30, 2, 60, 0
 );
 INSERT INTO WORKOUT_DETAIL VALUES
 (
-    'WR00001', 'W0003', 20, 0
+    'WR00001', 'W0003', 20, 3, 60, 0
 );
 INSERT INTO WORKOUT_DETAIL VALUES
 (
-    'WR00002', 'W0001', 15, 0
+    'WR00002', 'W0001', 15, 3, 45, 0 
 );
 
 SELECT *
