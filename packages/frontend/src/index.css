@@ -40,6 +40,9 @@
   --table-3: oklch(0.837 0.105 307.059);
   --table-4: oklch(0.904 0.049 248.366);
   --table-5: oklch(0.805 0.103 283.834);  
+  --condition: oklch(0.949 0.004 200.842);  
+  --control: oklch(1 0 0);  
+  --unreached: var(--primary);
 }
 
 .dark {
@@ -77,6 +80,9 @@
   --table-3: oklch(0.837 0.105 307.059);
   --table-4: oklch(0.904 0.049 248.366);
   --table-5: oklch(0.805 0.103 283.834); 
+  --condition: oklch(0.262 0.005 200.666);  
+  --control: oklch(1 0 0);    
+  --unreached: var(--primary);  
 }
 
 @theme inline {
@@ -127,6 +133,9 @@
   --color-table-3: var(--table-3);
   --color-table-4: var(--table-4);
   --color-table-5: var(--table-5);
+  --color-condition: var(--condition);
+  --color-control: var(--control);  
+  --color-unreached: var(--unreached);
 }
 
 @layer base {

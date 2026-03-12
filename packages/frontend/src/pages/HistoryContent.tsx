@@ -1,12 +1,16 @@
-export default function HistoryContent() {
+import WdogBreadClum from "@/components/WdogBreadClum";
+import WdogInputDateTerm from "@/components/WdogInputDateTerm";
 
+export default function HistoryContent() {
   return (
+        
     <div className="flex flex-col gap-3">
       <div className="flex gap-4">
-        <div >기록</div>
-        <div >{'>'}</div>
-        <div className="text-focus">콘텐츠제작</div>
+        <WdogBreadClum page="HistoryContent"/> 
       </div>
+      <div className="flex gap-4 border p-1 rounded-lg bg-condition border-primary">
+        <WdogInputDateTerm title="운동기간"/>
+      </div>        
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import type { ChartConfig } from "@/components/ui/chart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 
-interface WdogChartBarProps {
+interface WdogChartBarStackedWithLegendProps {
   chartData: Array<Record<string, any>>  // 완전 가변 데이터
   chartConfig: ChartConfig
   xAxisKey: string,  
@@ -12,15 +12,18 @@ interface WdogChartBarProps {
   className?: string
 }
 
-const WdogChartBar = ({ 
+const WdogChartBarStackedWithLegend = ({ 
   chartData, 
   chartConfig, 
   xAxisKey = "x_title",
   title = "",
   description = "",
   className = "h-80 w-full mt-4"
-}: WdogChartBarProps) => {
-  const legendKeys = Object.keys(chartConfig) as (keyof ChartConfig)[]
+}: WdogChartBarStackedWithLegendProps) => {
+  const actualConfig = Object.fromEntries(
+    Object.entries(chartConfig).filter(([key]) => !key.endsWith('_P'))
+  ) as ChartConfig;
+  const legendKeys = Object.keys(actualConfig) as (keyof ChartConfig)[]
 
   return (
     <Card>    
@@ -47,14 +50,25 @@ const WdogChartBar = ({
               tickMargin={10}
               tick={{ fontSize: 12 }}
             />
-            {/* 가변 Bar: chartConfig 키만큼 자동 생성 */}
-            {legendKeys.map((key) => (
-              <Bar 
-                key={key} 
-                dataKey={key} 
-                fill={chartConfig[key].color}
-              />
-            ))}
+            {legendKeys.map((key) => {
+              const planKey = `${key}_P`;
+              return [
+                // 실제 Bar
+                <Bar 
+                  key={`${key}-actual`}
+                  dataKey={key}
+                  stackId={key}
+                  fill={chartConfig[key].color}
+                />,
+                // 계획 Bar (동일 키의 _R)
+                <Bar 
+                  key={`${planKey}-plan`}
+                  dataKey={planKey}
+                  stackId={key}
+                  fill={chartConfig[planKey]?.color}
+                />
+              ];
+            })}            
           </BarChart>
         </ChartContainer>
       </CardContent>
@@ -62,4 +76,4 @@ const WdogChartBar = ({
   )
 }
 
-export default WdogChartBar;
+export default WdogChartBarStackedWithLegend;

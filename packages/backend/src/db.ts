@@ -1,6 +1,6 @@
 // oracle-pool.ts (에러 수정 완료)
 import oracledb from 'oracledb';
-import { NavItem, NavSubItem, ColDesc, WorkoutRecord, ChartData } from 'shared';
+import { NavItem, NavSubItem, ColDesc, WorkoutRecord, ChartData, WorkoutRecordWithPlan, MenuPos } from 'shared';
 import dotenv from 'dotenv';
 import Logger from './logger.js'
 
@@ -155,6 +155,34 @@ WHERE   title LIKE '%' || :1 || '%'
 ORDER BY nav_item_id, id
 `, [title]);
 }
+async function getRawCurMenuPos(page: string = ''): Promise<any[]> {
+  return select(`
+SELECT  JSON_OBJECT(
+            'id' VALUE a.id,
+            'parent_title' VALUE b.title, 
+            'title' VALUE a.title,
+            'siblings' VALUE (
+            COALESCE(
+                    (
+                    SELECT  JSON_ARRAYAGG(
+                                JSON_OBJECT(
+                                'id' VALUE id,
+                                'title' VALUE title,
+                                'href' VALUE href
+                                )
+                            ) 
+                    FROM    nav_sub_item  
+                    WHERE   nav_item_id = a.nav_item_id -- 현재 메뉴 자식 조회
+                    ), 
+                    JSON_ARRAY()  -- 빈 배열 반환
+                )
+            )   
+         ) AS result 
+FROM    nav_sub_item a 
+JOIN    nav_item b ON b.id = a.nav_item_id 
+WHERE   a.page = :1
+`, [page]);
+}
 async function searchRawSubMenus(key: string = ''): Promise<any[]> {
   if (!key?.trim() || key.trim().length < 2) {
     return [];  
@@ -182,28 +210,67 @@ ORDER BY seq
 `, [tableName]);
 }
 // 3 운동내역 조회 
-async function getRawWorkoutRecords(memberId: string): Promise<any[]> {
+async function getRawWorkoutRecords(memberId: string, from: string, to: string): Promise<any[]> {
   return select(`
 SELECT  A.id || '-' || B.workout_id AS id,
+        B.workout_id,
         A.wo_dt,
         C.title,
         MOD(TO_NUMBER(SUBSTR(B.workout_id, 2)) -1, 5) title_color, 
         B.target_reps,
         B.target_sets,
         B.count,
+        B.target_reps * B.target_sets AS count_p,  
+        CASE 
+          WHEN (B.target_reps * B.target_sets - B.count) < 0 
+          THEN 0 
+          ELSE (B.target_reps * B.target_sets - B.count) 
+        END AS count_s,        
         B.point,
         A.description
 FROM    workout_record A
 JOIN    workout_detail B ON B.workout_record_id = A.id 
 JOIN    workout C ON C.id = B.workout_id
 WHERE   A.member_id = :1
-`, [memberId]);
+AND     A.wo_dt >= :2
+AND     A.wo_dt <= :3
+`, [memberId, from, to]);
 }
 async function getRawWorkoutPivot(memberId: string, from: string, to: string): Promise<any> {
-  return select(`
-SELECT get_workout_pivot_json(:1,:2,:3) AS json_result
-FROM   dual
-`, [memberId, from, to]);
+  const binds = {
+    member_id: memberId,
+    from_dt: from,
+    to_dt: to,
+    json: { dir: oracledb.BIND_OUT, type: oracledb.CLOB }
+  };
+  return execPlsql(`
+BEGIN
+  usp_get_workout_pivot_json(
+    :member_id,
+    :from_dt,
+    :to_dt,
+    :json
+  );
+END;
+`, binds);
+}
+async function getRawWorkoutPivotWithPlan(memberId: string, from: string, to: string): Promise<any> {
+  const binds = {
+    member_id: memberId,
+    from_dt: from,
+    to_dt: to,
+    json: { dir: oracledb.BIND_OUT, type: oracledb.CLOB }
+  };
+  return execPlsql(`
+BEGIN
+  usp_get_workout_pivot_with_plan_json(
+    :member_id,
+    :from_dt,
+    :to_dt,
+    :json
+  );
+END;
+`, binds);
 }
 
 // =================================================================================================================
@@ -256,6 +323,12 @@ export const searchSubMenus = async (key: string = ''): Promise<NavSubItem[]> =>
     description: sub.DESCRIPTION
   }));
 }
+// 4. 메뉴 검색
+export const getCurMenuPos = async (page: string = ''): Promise<MenuPos> => {
+  const result = await getRawCurMenuPos(page);
+  const parsedResult = JSON.parse(result[0].RESULT);  // 문자열 → 객체
+  return parsedResult as MenuPos;
+}
 // 4. Column Description 조회
 export const getColDescs = async (tableName: string): Promise<ColDesc[]> => {
   const colDescs = await getRawColDescs(tableName);
@@ -269,16 +342,19 @@ export const getColDescs = async (tableName: string): Promise<ColDesc[]> => {
   }));
 } 
 // 5. 운동내역 조회
-export const getWorkoutRecords = async (memberId: string): Promise<WorkoutRecord[]> => {
-  const records = await getRawWorkoutRecords(memberId);
+export const getWorkoutRecords = async (memberId: string, from: string, to: string): Promise<WorkoutRecord[]> => {
+  const records = await getRawWorkoutRecords(memberId, from, to);
   return records.map((rec: any) => ({
     id: rec.ID,
+    workout_id: rec.WORKOUT_ID,
     wo_dt: rec.WO_DT,
     title: rec.TITLE,
     title_color: rec.TITLE_COLOR,
     target_reps: rec.TARGET_REPS,
     target_sets: rec.TARGET_SETS,
     count: rec.COUNT,
+    count_p: rec.COUNT_P,
+    count_s: rec.COUNT_S,
     point: rec.POINT,
     description: rec.DESCRIPTION
   }));
@@ -286,16 +362,18 @@ export const getWorkoutRecords = async (memberId: string): Promise<WorkoutRecord
 // 6. 운동내역 피벗 조회
 export const getWorkoutPivot = async (memberId: string, from: string, to: string): Promise<ChartData> => {
   const result = await getRawWorkoutPivot(memberId, from, to);
-  // 1. CLOB 문자열 추출
-  const jsonString = result[0].JSON_RESULT;
-  
-  // 2. JSON 파싱 (이스케이프 자동 처리)
-  const parsed = JSON.parse(jsonString);
-  
-  console.log('Parsed pivot data:', parsed);
   // 3. ChartData 타입 반환
   return {
-    columns: parsed.columns,
-    data: parsed.data
+    columns: result.columns,
+    data: result.data
+  } as ChartData;
+}
+// 7. 운동내역 피벗 조회 (플랜 포함)
+export const getWorkoutPivotWithPlan = async (memberId: string, from: string, to: string): Promise<ChartData> => {
+  const result = await getRawWorkoutPivotWithPlan(memberId, from, to);
+  // 3. ChartData 타입 반환
+  return {
+    columns: result.columns,
+    data: result.data
   } as ChartData;
 }

@@ -1,5 +1,5 @@
 #1. 프런트앤드 폴더로 이동 & 기동 
-cd packages/frontend 
+cd packages/frontend
 npm run dev
 
 #2. 백앤드 폴더로 이동 & 기동

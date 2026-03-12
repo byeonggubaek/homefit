@@ -9,7 +9,6 @@ IS
   v_sql_data    CLOB;  -- 피벗 + JSON 배열 SQL
   v_data_json   CLOB;  -- data 부분 JSON
   v_cols_json   CLOB;  -- columns 부분 JSON
-  v_result_json CLOB;  -- 최종 JSON
 BEGIN
   -- 1) PIVOT IN 절 컬럼 목록
   SELECT LISTAGG(
@@ -48,17 +47,17 @@ BEGIN
       SELECT DISTINCT B.workout_id
       FROM workout_record A
            JOIN workout_detail B ON B.workout_record_id = A.id
-      WHERE A.member_id = :member_id
-        AND A.wo_dt BETWEEN :from_dt AND :to_dt
+      WHERE A.member_id = ''' || p_member_id || '''
+        AND A.wo_dt BETWEEN ''' || p_from_dt || ''' AND ''' || p_to_dt || '''
     ), date_range AS (
       SELECT 
-        TRUNC(TO_DATE(:from_dt, ''YYYY-MM-DD'')) + LEVEL - 1 AS date_val
+        TRUNC(TO_DATE(''' || p_from_dt || ''', ''YYYY-MM-DD'')) + LEVEL - 1 AS date_val
       FROM DUAL 
-      CONNECT BY LEVEL <= TRUNC(TO_DATE(:to_dt, ''YYYY-MM-DD'') - TO_DATE(:from_dt, ''YYYY-MM-DD'')) + 1
+      CONNECT BY LEVEL <= TRUNC(TO_DATE(''' || p_to_dt || ''', ''YYYY-MM-DD'') - TO_DATE(''' || p_from_dt || ''', ''YYYY-MM-DD'')) + 1
     )
     SELECT JSON_ARRAYAGG(
              JSON_OBJECT(
-               ''wo_dt'' VALUE TO_CHAR(wo_dt, ''DD'')';
+               ''wo_dt'' VALUE wo_dt';
 
   FOR c IN (
     SELECT DISTINCT B.workout_id
@@ -72,12 +71,12 @@ BEGIN
   END LOOP;
 
   v_sql_data := v_sql_data || '
-             )
+             ) RETURNING CLOB
            ) AS j
       FROM (
         SELECT *
         FROM (
-          SELECT dr.date_val wo_dt, 
+          SELECT TO_CHAR(dr.date_val, ''DD'') wo_dt, 
                  w.workout_id,
                  0 count
           FROM   date_range dr
@@ -85,29 +84,32 @@ BEGIN
 
           UNION ALL 
 
-          SELECT A.wo_dt,
+          SELECT TO_CHAR(A.wo_dt, ''DD''),
                  B.workout_id,
                  B.count
           FROM   workout_record A
                  JOIN workout_detail B ON B.workout_record_id = A.id
-          WHERE  A.member_id = :member_id
-          AND    A.wo_dt BETWEEN :from_dt AND :to_dt
+          WHERE  A.member_id = ''' || p_member_id || '''
+          AND    A.wo_dt BETWEEN ''' || p_from_dt || ''' AND ''' || p_to_dt || '''
         )
         PIVOT (
           SUM(count)
           FOR workout_id IN (' || v_cols || ')
         )
-      )';
-  DBMS_OUTPUT.PUT_LINE(v_sql_data);  -- 크기 확인
+      )
+      ';
+--DBMS_OUTPUT.PUT_LINE(v_sql_data);  -- 크기 확인
 
   EXECUTE IMMEDIATE v_sql_data
-    INTO v_data_json
-    USING p_member_id, p_from_dt, p_to_dt;
+    INTO v_data_json;
 
-  DBMS_OUTPUT.PUT_LINE(v_data_json);  -- 크기 확인
+--  DBMS_OUTPUT.PUT_LINE(v_cols_json);  -- 크기 확인
+--  DBMS_OUTPUT.PUT_LINE(v_data_json);  -- 크기 확인
   -- 4) columns + data 하나로 합치기
-   v_result_json := '{
+   p_result_json := '{
     "columns": ' || NVL(v_cols_json, '[]') || ',
     "data": ' || NVL(v_data_json, '[]') || '
-  }';                  
+  }';
+  -- DBMS_OUTPUT.PUT_LINE(p_result_json);  -- 크기 확인  
 END;
+/

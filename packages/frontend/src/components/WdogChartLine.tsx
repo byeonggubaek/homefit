@@ -18,15 +18,15 @@ const WdogChartLine = ({
   xAxisKey = "x_title",
   title = "",
   description = "",
-  className = "h-80 w-140 mt-4"
+  className = "h-80 w-full mt-4"
 }: WdogChartLineProps) => {
   // chartConfig 키들로 동적 Line 생성 (가변 Legend)
   const legendKeys = Object.keys(chartConfig) as (keyof ChartConfig)[]
 
   return (
     <Card>     
-      <CardHeader className="flex flex-col items-center space-y-1.5">
-        <CardTitle className="text-2xl font-bold tracking-tight">{title}</CardTitle>
+      <CardHeader className="flex items-center space-y-1.5">
+        <CardTitle className="text-2xl">{title}</CardTitle>
         <CardDescription className="text-primary">{description}</CardDescription>
       </CardHeader>
       <CardContent className="px-2 pt-0">   

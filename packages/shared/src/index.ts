@@ -30,14 +30,28 @@ export interface ColDesc {
 =======================================================================================================*/
 export interface WorkoutRecord {
   id: string;
+  workout_id: string;
   wo_dt: Date;
   title: string;
   title_color: string;
   target_reps: number;
   target_sets: number;
+  count_p: number;
   count: number;
+  count_s: number;
   point: number;
   description?: string;
+}
+export interface MenuPosSibling {
+  id: string,
+  title: string;
+  href: string;
+}
+export interface MenuPos {
+  id: string;
+  parent_title: string;
+  title: string;
+  siblings: MenuPosSibling[];
 }
 export interface ChartData {
   columns: Record<string, any>;

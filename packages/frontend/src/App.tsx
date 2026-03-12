@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import MainLayout from '@/layouts/MainLayout.tsx';
 import Home from '@/pages/Home.tsx';
 import MemberPlan from "./pages/MemberPlan";
-import MemberProfile from "./pages/MemberPlan";
+import MemberProfile from "./pages/MemberProfile";
 import RewardExchange from "./pages/RewardExchange";
 import RewardPoint from "./pages/RewardPoint";
 import HistoryContent from "./pages/HistoryContent";

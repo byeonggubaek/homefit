@@ -9,7 +9,6 @@ import {
   Pie, 
   PieChart, 
   Cell,
-  ResponsiveContainer 
 } from "recharts"
 import type { ChartConfig } from "@/components/ui/chart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
@@ -40,8 +39,8 @@ const WdogChartPie = ({
 
   return (
   <Card>
-      <CardHeader className="flex flex-col items-center space-y-1.5">
-        <CardTitle className="text-2xl font-bold tracking-tight">{title}</CardTitle>
+      <CardHeader className="flex items-center space-y-1.5">
+        <CardTitle className="text-2xl">{title}</CardTitle>
         <CardDescription className=" text-primary">{description}</CardDescription>
       </CardHeader>
       <CardContent className="px-2 pt-0">

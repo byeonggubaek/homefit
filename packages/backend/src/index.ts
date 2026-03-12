@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { closePool, getMenus, searchSubMenus, getColDescs, getWorkoutRecords, getWorkoutPivot } from './db.js';
+import { closePool, getMenus, searchSubMenus, getColDescs, getWorkoutRecords, getWorkoutPivot, getWorkoutPivotWithPlan, getCurMenuPos } from './db.js';
 import dotenv from 'dotenv';
 import Logger from './logger.js'
 
@@ -90,6 +90,29 @@ app.get('/api/get_menus', async (req, res) => {
     });
   }
 });
+// API: 메뉴 위치조회 
+// GET /api/get_menu_pos?page=메뉴페이지명
+// PARAMETER : page (선택) - 조회할 메뉴 페이지명 
+app.get('/api/get_menu_pos', async (req, res) => {
+  let apiLogEntry = null;  
+  try {
+    const { page } = req.query as { page?: string };  
+    apiLogEntry = await Logger.logApiStart('GET /api/get_menu_pos', [page]);
+    const menuPos = await getCurMenuPos(page);
+    res.json({
+      success: true,
+      data: menuPos,
+      timestamp: new Date().toISOString()
+    });
+    await Logger.logApiSuccess(apiLogEntry);
+  } catch (error) {
+    await Logger.logApiError(apiLogEntry, error);
+    res.status(500).json({
+      success: false,
+      error: (error as Error).message
+    });
+  }
+});
 // API: 메뉴 검색
 // GET /api/search_menus?key=검색어
 // PARAMETER : key (필수) - 검색할 메뉴 제목 또는 설명
@@ -158,14 +181,28 @@ app.get('/api/get_workout_records', async (req, res) => {
   let apiLogEntry = null;
   try {
     const { memberId } = req.query as { memberId: string };
+    const { from } = req.query as { from: string };
+    const { to } = req.query as { to: string };
     if (!memberId) {
       return res.status(400).json({
         success: false,
         error: '회원 ID가 필요합니다.'
       });
     }
-    apiLogEntry = await Logger.logApiStart('GET /api/get_workout_records', [memberId]);
-    const records = await getWorkoutRecords(memberId);
+    if (!from) {
+      return res.status(400).json({
+        success: false,
+        error: '시작일이 필요합니다.'
+      });
+    }
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        error: '종료일이 필요합니다.'
+      });
+    }     
+    apiLogEntry = await Logger.logApiStart('GET /api/get_workout_records', [memberId, from, to]);
+    const records = await getWorkoutRecords(memberId, from, to);
     res.json({
       success: true,
       data: records,
@@ -214,7 +251,54 @@ app.get('/api/get_workout_pivot', async (req, res) => {
     const records = await getWorkoutPivot(memberId, from, to);
     res.json({
       success: true,
-      data: records,
+      data: records.data,
+      columns: records.columns,      
+      timestamp: new Date().toISOString()
+    });
+    await Logger.logApiSuccess(apiLogEntry);
+  } catch (error) {
+    await Logger.logApiError(apiLogEntry, error);
+    res.status(500).json({
+      success: false,
+      error: (error as Error).message
+    });
+  }
+});
+// API: 전체 운동내역 일별 집계 조회 (플랜 포함)
+// GET /api/get_workout_pivot_with_plan?memberId=회원ID&from=시작일&to=종료일
+// PARAMETER : memberId (필수) - 조회할 회원 ID
+//             from (필수) - 조회 시작일 (YYYY-MM-DD)
+//             to (필수) - 조회 종료일 (YYYY-MM-DD)
+app.get('/api/get_workout_pivot_with_plan', async (req, res) => {
+  let apiLogEntry = null;
+  try {
+    const { memberId } = req.query as { memberId: string };
+    const { from } = req.query as { from: string };
+    const { to } = req.query as { to: string };
+    if (!memberId) {
+      return res.status(400).json({
+        success: false,
+        error: '회원 ID가 필요합니다.'
+      });
+    }
+    if (!from) {
+      return res.status(400).json({
+        success: false,
+        error: '시작일이 필요합니다.'
+      });
+    }
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        error: '종료일이 필요합니다.'
+      });
+    }        
+    apiLogEntry = await Logger.logApiStart('GET /api/get_workout_pivot_with_plan', [memberId, from, to]);
+    const records = await getWorkoutPivotWithPlan(memberId, from, to);
+    res.json({
+      success: true,
+      data: records.data,
+      columns: records.columns,      
       timestamp: new Date().toISOString()
     });
     await Logger.logApiSuccess(apiLogEntry);

@@ -1,11 +1,13 @@
-export default function MemberProfile() {
+import WdogBreadClum from "@/components/WdogBreadClum";
+
+export default function MemberPlan() {
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-4">
-        <div >내정보</div>
-        <div >{'>'}</div>
-        <div className="text-focus">목표</div>
+        <WdogBreadClum page="MemberPlan"/> 
+      </div>
+      <div className="flex gap-4">
       </div>
     </div>
   );

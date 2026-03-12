@@ -53,37 +53,38 @@ CREATE TABLE NAV_SUB_ITEM
 	TITLE NVARCHAR2(14) NOT NULL,
     IMG NVARCHAR2(256) NOT NULL,
 	DESCRIPTION NVARCHAR2(1024), 
+    PAGE NVARCHAR2(256) NOT NULL,
     HREF NVARCHAR2(256) NOT NULL,
     CONSTRAINT NAV_SUB_ITEM_PK PRIMARY KEY (NAV_ITEM_ID, ID),
     CONSTRAINT NAV_SUB_ITEM_USER_NAV_ITEM_ID_FK FOREIGN KEY (NAV_ITEM_ID) REFERENCES NAV_ITEM(ID)    
 );
 INSERT INTO NAV_SUB_ITEM VALUES
 (
-    'M0001', 'S0001', '운동하기','/menu/tracking.jpg', '프로그램에 따라 운동을 수행합니다.', '/workout/tracking'
+    'M0001', 'S0001', '운동하기','/menu/tracking.jpg', '프로그램에 따라 운동을 수행합니다.', 'WorkoutTracking', '/workout/tracking'
 );
 INSERT INTO NAV_SUB_ITEM VALUES
 (
-    'M0002', 'S0001', '기록확인','/menu/state.jpg', '운동 내역을 확인합니다.', '/history/state'
+    'M0002', 'S0001', '운동내역','/menu/state.jpg', '운동 내역을 확인합니다.', 'HistoryState', '/history/state'
 );
 INSERT INTO NAV_SUB_ITEM VALUES
 (
-    'M0002', 'S0002', '콘텐츠제작','/menu/content.jpg', '운동 내역으로 SNS 콘텐츠를 자동 생성합니다.', '/history/content'
+    'M0002', 'S0002', '콘텐츠제작','/menu/content.jpg', '운동 내역으로 SNS 콘텐츠를 자동 생성합니다.', 'HistoryContent', '/history/content'
 );
 INSERT INTO NAV_SUB_ITEM VALUES
 (
-    'M0003', 'S0001', '보상교환','/menu/exchange.jpg', '포인트로 보상을 받습니다.', '/reward/exchange'
+    'M0003', 'S0001', '보상교환','/menu/exchange.jpg', '포인트로 보상을 받습니다.', 'RewardExchange', '/reward/exchange'
 );
 INSERT INTO NAV_SUB_ITEM VALUES
 (
-    'M0003', 'S0002', '포인트','/menu/point.jpg', '운동 포인트를 확인합니다.', '/reward/point'
+    'M0003', 'S0002', '포인트','/menu/point.jpg', '운동 포인트를 확인합니다.', 'RewardPoint', '/reward/point'
 );
 INSERT INTO NAV_SUB_ITEM VALUES
 (
-    'M0004', 'S0001', '프로필','/menu/profile.jpg', '개인 정보를 관리합니다.', '/member/profile'
+    'M0004', 'S0001', '프로필','/menu/profile.jpg', '개인 정보를 관리합니다.', 'MemberProfile', '/member/profile'
 );
 INSERT INTO NAV_SUB_ITEM VALUES
 (
-    'M0004', 'S0002', '운동목표','/menu/plan.jpg', '운동 목표를 설정하고 관리합니다.', '/member/plan'
+    'M0004', 'S0002', '운동목표','/menu/plan.jpg', '운동 목표를 설정하고 관리합니다.', 'MemberPlan', '/member/plan'
 );
 
 SELECT *
@@ -151,18 +152,28 @@ CREATE TABLE COLUMN_DESC
     CONSTRAINT COLUMN_DESC_PK PRIMARY KEY (TABLE_NAME, SEQ)  -- 
 );
 
-INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 1, 1, 'id', '매출번호', 'key', 80, null);
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 1, 1, 'id', '운동번호', 'key', 80, null);
 INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 2, 2, 'wo_dt', '운동일', 'dat', 100, null);
 INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 3, 3, 'title', '운동명', 'lst', 100, null);
-INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 4, 4, 'target_reps', '권장횟수', 'qty', 100, 'sum');
-INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 5, 5, 'target_sets', '권장세트수', 'qty', 100, 'avg');
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 4, 4, 'target_reps', '반복횟수', 'qty', 100, 'sum');
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 5, 5, 'target_sets', '세트수', 'qty', 100, 'sum');
 INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 6, 6, 'count', '실행횟수', 'qty', 100, 'sum');  
-INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 7, 7, 'point', '횟득포인트', 'qty', 100, 'sum');  
+INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 7, 7, 'point', '획득포인트', 'qty', 100, 'sum');  
 INSERT INTO COLUMN_DESC VALUES ('WorkoutRecord', 8, 8, 'description', '운동내역', 'str', 100, 'sum');  
+
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 1, 1, 'id', '운동번호', 'key', 80, null);
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 2, 2, 'wo_dt', '운동일', 'dat', 100, null);
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 3, 3, 'title', '운동명', 'lst', 100, null);
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 4, 4, 'target_reps', '반복횟수', 'qty', 100, 'sum');
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 5, 5, 'target_sets', '세트수', 'qty', 100, 'sum');
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 6, 6, 'count_p', '권장횟수', 'qty', 100, 'sum');  
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 7, 7, 'count', '실행횟수', 'qty', 100, 'sum');  
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 8, 8, 'count_s', '잔여횟수', 'qty', 100, 'sum');  
+INSERT INTO COLUMN_DESC VALUES ('WorkoutAchievement', 9, 9, 'description', '운동내역', 'str', 100, 'sum');  
 
 SELECT *
 FROM   COLUMN_DESC
-WHERE  TABLE_NAME = 'INVOICE';
+WHERE  TABLE_NAME = 'WorkoutRecord';
 
 REM ===============================================================================================================
 REM = 홈트 테이블 삭제  
@@ -256,19 +267,19 @@ CREATE TABLE WORKOUT_RECORD
 
 INSERT INTO WORKOUT_RECORD VALUES
 (
-    'WR00001', 'U000001', '2026-01-01', '첫번째 운동'
+    'WR00001', 'U000001', '2026-03-01', '첫번째 운동'
 );
 INSERT INTO WORKOUT_RECORD VALUES
 (
-    'WR00002', 'U000001', '2026-02-02', '두번째 운동'
+    'WR00002', 'U000001', '2026-03-02', '두번째 운동'
 );
 INSERT INTO WORKOUT_RECORD VALUES
 (
-    'WR00003', 'U000002', '2026-01-03', '첫번째 운동'
+    'WR00003', 'U000002', '2026-03-03', '첫번째 운동'
 );
 INSERT INTO WORKOUT_RECORD VALUES
 (
-    'WR00004', 'U000002', '2026-02-02', '두번째 운동'
+    'WR00004', 'U000002', '2026-03-02', '두번째 운동'
 );
 
 SELECT *
@@ -298,11 +309,11 @@ INSERT INTO WORKOUT_DETAIL VALUES
 );
 INSERT INTO WORKOUT_DETAIL VALUES
 (
-    'WR00001', 'W0003', 20, 3, 60, 0
+    'WR00001', 'W0003', 20, 3, 55, 0
 );
 INSERT INTO WORKOUT_DETAIL VALUES
 (
-    'WR00002', 'W0001', 15, 3, 45, 0 
+    'WR00002', 'W0001', 15, 3, 30, 0 
 );
 
 SELECT *

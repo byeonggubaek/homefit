@@ -51,15 +51,39 @@ export const formatTime = (value: Date | number | string) => {
   return timeFormatter.format(dateValue);
 };  
 
-export const createWorkoutChartConfig = (columns: Array<{id: string, name: string}>): ChartConfig => {
+export const createWorkoutChartConfig = (columns: Array<{id: string, name: string}>, colors: string[]): ChartConfig => {
   return columns.reduce((config, col, index) => {
     config[col.id] = {
       label: col.name,
-      color: `var(--chart-${(index % 5) + 1})`
+      color: colors ? `var(${colors[index % colors.length].replace('bg', '-')})` : `var(--chart-${(index % 5) + 1})`
     };
     return config;
   }, {} as ChartConfig);
 };
+export const createWorkoutChartConfigWithPlan = (
+  columns: Array<{id: string, name: string}>, 
+  colors: string[]
+): ChartConfig => {
+  return columns.reduce((config, col, index) => {
+    const baseColor = colors?.[index % colors.length] || `--chart-${(index % 5) + 1}`;
+    // 실제값
+    config[col.id] = {
+      label: col.name,
+      color: `var(${baseColor.replace('bg', '-')})`
+    };
+    
+    // 계획값 (_P)
+    config[col.id + '_P'] = {
+      //label: `${col.name}(잔여횟수)`,
+      label: `잔여횟수`,
+      //color: `var(${baseColor.replace('bg-table', '--warning')})`
+      color: `var(--unreached)`
+    };
+    
+    return config;
+  }, {} as ChartConfig);
+};
+
 
 export type ChartIconMap = Record<string, React.ComponentType<{ className?: string }>>;
 
@@ -73,7 +97,7 @@ export const addIconsToConfig = (
       {
         ...value,
         icon: iconMap[key] || iconMap.default
-      }
+      } 
     ])
   ) as ChartConfig;  // 타입 단언 최소화
 };

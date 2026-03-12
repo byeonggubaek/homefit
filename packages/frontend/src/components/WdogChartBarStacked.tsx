@@ -3,7 +3,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import type { ChartConfig } from "@/components/ui/chart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 
-interface WdogChartBarProps {
+interface WdogChartBarStackedProps {
   chartData: Array<Record<string, any>>  // 완전 가변 데이터
   chartConfig: ChartConfig
   xAxisKey: string,  
@@ -12,29 +12,28 @@ interface WdogChartBarProps {
   className?: string
 }
 
-const WdogChartBar = ({ 
+const WdogChartBarStacked = ({ 
   chartData, 
   chartConfig, 
   xAxisKey = "x_title",
   title = "",
   description = "",
   className = "h-80 w-full mt-4"
-}: WdogChartBarProps) => {
-  const legendKeys = Object.keys(chartConfig) as (keyof ChartConfig)[]
-
+}: WdogChartBarStackedProps) => {
+const legendKeys = Object.keys(chartConfig) as (keyof ChartConfig)[]
   return (
-    <Card>    
+     <Card className="p-4">
       <CardHeader className="flex items-center space-y-1.5">
         <CardTitle className="text-2xl">{title}</CardTitle>
         <CardDescription className=" text-primary">{description}</CardDescription>
       </CardHeader>
-      <CardContent className="px-2 pt-0">   
+      <CardContent className="px-2 pt-0">         
         <ChartContainer config={chartConfig} className={className}>
           <BarChart data={chartData} accessibilityLayer>
             <CartesianGrid vertical={false} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <ChartLegend content={<ChartLegendContent />} />
-            <XAxis
+            <ChartTooltip content={<ChartTooltipContent />} />            
+            <ChartLegend content={<ChartLegendContent />} />          
+            <XAxis 
               dataKey={xAxisKey}
               tickLine={true}
               axisLine={true}
@@ -45,21 +44,23 @@ const WdogChartBar = ({
               tickLine={true}
               axisLine={true}
               tickMargin={10}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12 }}            
             />
-            {/* 가변 Bar: chartConfig 키만큼 자동 생성 */}
-            {legendKeys.map((key) => (
-              <Bar 
-                key={key} 
-                dataKey={key} 
+            {/* Stacked Bar: stackId 동일하게 */}
+            {legendKeys.map((key, index) => (
+              <Bar
+                key={key}
+                dataKey={key}
+                stackId="workout"
                 fill={chartConfig[key].color}
+                radius={index === 0 ? [4, 4, 0, 0] : index === legendKeys.length - 1 ? [0, 0, 4, 4] : undefined}
               />
             ))}
           </BarChart>
         </ChartContainer>
       </CardContent>
-    </Card>      
+    </Card>
   )
 }
 
-export default WdogChartBar;
+export default WdogChartBarStacked;
