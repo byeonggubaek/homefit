@@ -1,14 +1,16 @@
 # Monorepo 프로젝트 기본 
 > Target의 Javascript 버전은 ES2022 이다.
 > 개발 IDE는 Visual Studio Code를 사용한다.
-> 웹서버와 DB서버는 로컬에서 테스트 한다.   
+> 웹서버와 DB서버는 로컬에서 테스트 한다. 이후 Cloude Flare를 이용하여 클라우딩 할 예정이다.
+
 
 ## 1. 프런트앤드 
 - React 프레임워크를 이용한다.
 
 ## 2. 백앤드
 - Node.js 프레임워크를 이용한다.
-- DB는 Oracle을 기본으로 사용한다. 
+- DB는 Oracle을 기본으로 사용한다.
+- DB는 PostgreSql로 전환할 수 있다.
 
 ## 3. 공통
 - 공통 모듈은 가능하면 사용하지 않는것으로 한다.
